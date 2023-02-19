@@ -1,6 +1,6 @@
 # WareFlow
 
-## A DSL to write data flows for Data Warehouses
+## A Scala DSL to write data flows for Data Warehouses
 
 The main idea is to write typical Apache Spark or Flink-like pipelines, compile them to SQL queries and run them on systems that only have SQL endpoints.
 
@@ -64,11 +64,11 @@ with DPL we would write:
 - Source tables can be declared with:
   - `t"my_source_table"`
   - or `Source("my_source_table")`
-    Then transformations on a table can be written with `withColumn()`, `filter()`, `groupBy()`, `join()` etc...
+  Then transformations on a table can be written with `withColumn()`, `filter()`, `groupBy()`, `join()` etc...
 - Existing fields can be referenced with:
   - `c"my_field"`
   - or `col("my_field")`
-    Then common operations can be applied on this field with: `==`, `*`, `+`, `-` etc...
+  Then common operations can be applied on this field with: `==`, `*`, `+`, `-` etc...
 - Write a literal (constant value): `lit("constantValue")`
 - Define an alias for a calculated column: `myColumn.as("name_of_my_column")`
 
