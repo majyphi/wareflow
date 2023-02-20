@@ -166,9 +166,16 @@ GROUP BY product_id
 <td>
 
 ```scala
-val deduplicationWindow = Window.partitionBy(c"product_id").orderBy(c"amount".asc)
+val deduplicationWindow = Window
+  .partitionBy(c"product_id")
+  .orderBy(c"amount".asc)
+
 t"prices"
-    .withColumn(rank().over(deduplicationWindow).as("rank"))
+    .withColumn(
+      rank()
+        .over(deduplicationWindow)
+        .as("rank")
+    )
     .filter(c"rank" == lit("1"))
     .show
 ```
