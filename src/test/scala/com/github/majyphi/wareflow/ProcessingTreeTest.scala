@@ -25,7 +25,7 @@ class ProcessingTreeTest extends AnyFlatSpec with BeforeAndAfterAll with Matcher
   "SQL query building on a projection" should "return a runnable select+filter query" in {
     val result = t"sales"
       .select(c"id")
-      .filter(c"id" == lit("product1"))
+      .filter(c"id" === "product1")
       .run
 
     result shouldBe a(Symbol("Success"))
@@ -47,7 +47,7 @@ class ProcessingTreeTest extends AnyFlatSpec with BeforeAndAfterAll with Matcher
   "SQL query building on an join" should "return a runnable join query" in {
     val result = t"sales"
       .leftJoin(t"prices")
-      .on(left(c"id") == right(c"id"))
+      .on(left(c"id") === right(c"id"))
       .select(c"id", c"amount", c"price")
       .run
 
@@ -64,19 +64,13 @@ class ProcessingTreeTest extends AnyFlatSpec with BeforeAndAfterAll with Matcher
 
   "SQL query building on a Window Aggregation" should "return a runnable window query" in {
     val window = Window.partitionBy(c"id").orderBy(c"price".desc)
-    val topPrices = t"prices"
+    val result = t"prices"
       .withColumn(rank().over(window).as("rank"))
-      .filter(c"rank" == lit("1"))
+      .filter(c"rank" === "1")
+      .run
 
-    val sales = t"sales"
-
-    val joinResult = sales.leftJoin(topPrices)
-      .on(left(c"id") == right(c"id"))
-      .groupBy(c"id")
-      .agg((c"amount" * c"price").max)
-
-      joinResult.printQuery
-      joinResult.show
+    result shouldBe a(Symbol("Success"))
+    result.get should contain theSameElementsAs Seq(Seq("product1", "2", "1"), Seq("product2", "4", "1"))
   }
 
 }

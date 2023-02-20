@@ -3,6 +3,7 @@ package com.github.majyphi.wareflow.core
 trait Expression {
 
   def as(name: String): Expression = alias(this, name)
+
   def +(e: Expression): Expression = addition(this, e)
   def -(e: Expression): Expression = subtraction(this, e)
   def *(e: Expression): Expression = product(this, e)
@@ -11,7 +12,18 @@ trait Expression {
   def <(e: Expression): Expression = lowerThan(this, e)
   def <=(e: Expression): Expression = lowerOrEqual(this, e)
   def equalTo(e: Expression): Expression = equality(this, e)
-  def ==(e: Expression): Expression = equalTo(e)
+  def ===(e: Expression): Expression = equalTo(e)
+
+  def +(l: Any): Expression = addition(this, lit(l))
+  def -(l: Any): Expression = subtraction(this, lit(l))
+  def *(l: Any): Expression = product(this, lit(l))
+  def >(l: Any): Expression = greaterThan(this, lit(l))
+  def >=(l: Any): Expression = greaterOrEqual(this, lit(l))
+  def <(l: Any): Expression = lowerThan(this, lit(l))
+  def <=(l: Any): Expression = lowerOrEqual(this, lit(l))
+  def equalTo(l: Any): Expression = equality(this, lit(l))
+  def ===(l: Any): Expression = equalTo(lit(l))
+
   def max: Expression = maximum(this)
   def min: Expression = minimum(this)
   def over(window: Window): Expression = windowAggregation(this,window)
@@ -40,7 +52,7 @@ case class *() extends Expression
 
 
 case class col(name: String) extends Column
-case class lit(value: String) extends Expression
+case class lit(value: Any) extends Expression
 
 case class windowAggregation(column: Expression, window : Window) extends Expression
 

@@ -19,7 +19,7 @@ trait CommonSQLGrammar extends Grammar {
     case alias(e,_)                             => evalExpresion(e)
     case *()                                    => "*"
     case col(name)                              => s"\"$name\""
-    case lit(value)                             => s"'$value'"
+    case lit(value)                             => evalLiteralValue(value)
     case addition(left, right)                  => s"${evalName(left)} + ${evalName(right)}"
     case subtraction(left, right)               => s"${evalName(left)} - ${evalName(right)}"
     case product(left, right)                   => s"${evalName(left)}*${evalName(right)}"
@@ -29,6 +29,13 @@ trait CommonSQLGrammar extends Grammar {
     case rank()                                 => s"rank()"
     case windowAggregation(e, window)           => s"${evalExpresion(e)} over (${evalWindow(window)})"
     case _                                      => throw GrammarException("Unimplemented Column Expression: " + c.getClass.toString)
+  }
+
+  def evalLiteralValue(value : Any) : String = value match {
+    case string : String => s"'$string'"
+    case int : Int => int.toString
+    case double : Double => double.toString
+    case _ => throw GrammarException("Unimplemented type for literal: " + value.getClass.toString)
   }
 
   def evalSelectExpression(c: Expression): String = c match {
