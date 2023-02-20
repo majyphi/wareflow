@@ -171,11 +171,7 @@ val deduplicationWindow = Window
   .orderBy(c"amount".asc)
 
 t"prices"
-    .withColumn(
-      rank()
-        .over(deduplicationWindow)
-        .as("rank")
-    )
+    .withColumn(rank().over(deduplicationWindow).as("rank"))
     .filter(c"rank" == lit("1"))
     .show
 ```
@@ -186,9 +182,12 @@ t"prices"
 ```sql
 SELECT
     product_id,
-    max(price)
+    rank() OVER (
+        PARTITION BY product_id
+        ORDER BY amount ASC
+    ) as "rank"
 FROM prices
-GROUP BY product_id
+WHERE "rank" == 1
 ```
 
 </td>
