@@ -1,16 +1,16 @@
 
 ### Referencing a table
-`Table("prices")` 
-`t"prices"`
+- `Table("prices")` 
+- `t"prices"`
 
 
 ### Referencing a column/field
-`col("product_id")`
-`c"product_id"`
+- `col("product_id")`
+- `c"product_id"`
 
 
 ### Create a literal (constant value)
-`lit("my_constant_value")`
+- `lit("my_constant_value")`
 
 ---
 
