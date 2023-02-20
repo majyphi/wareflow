@@ -7,6 +7,7 @@ The main idea is to write typical DataFrame-style pipelines, compile them to SQL
 ## Example:
 
 Given the following tables on our system:
+
 ```
 Amount of Sales
 ┌───────────────────────────────────────┬──────────────────────────────────────┐
@@ -46,7 +47,7 @@ with Wareflow we would write:
       .show
 ```
 
-For a complete guide on syntax: [Wareflow Cheat Sheet](cheatsheet.md)
+---
 
 ## Quick Start
 
@@ -67,12 +68,18 @@ Complete syntax can be found in: [Wareflow Cheat Sheet](cheatsheet.md)
 
 ### Executing your pipeline
 
-- Import a grammar matching your system: `import com.github.majyphi.wareflow.grammars.CommonSQLGrammar._`
-- Create a connection to your DataWarehouse : `implicit val connection: Connection = DriverManager.getConnection(...)`
+- Import a grammar matching your system: 
+```scala
+import com.github.majyphi.wareflow.grammars.CommonSQLGrammar._
+```
+- Create a connection to your DataWarehouse : 
+```scala
+implicit val connection: Connection = DriverManager.getConnection(...)
+```
 
-Now pipelines can be executed by calling `.run`, `.show`
+Now pipelines can be executed by calling `.run` or `.show`
 
-### Extending the framework by providing your own grammar
+## Extending the framework by providing your own grammar
 
 - You can create your own grammar by extending the trait `Grammar`, and overriding the method `treeToSQL`
   For simplicity, you can extend `CommonSQLGrammar` and override what is needed
@@ -80,8 +87,8 @@ Now pipelines can be executed by calling `.run`, `.show`
 
 
 ## Structure of the repo
-- com.github.majestic.dpl.core contains the structure of the API for the developer. It should be as universal as possible
-- com.github.majestic.dpl.grammars contains the the necessary code to convert the structure to SQL code. There is a `CommonSQLGrammar` the aims to be broad and compatible to most systems, however as SQL is not a standard language, other grammars can be introduced by extending and overriding this common one.
-- com.github.majestic.dpl.runtime contains the code to run, get the results and show them on an arbitrary JDBC connection.
-- Tests contain just the basics to check the structure is consistent and runnable. They are run against an In-memory DuckDB instance.
+- `com.github.majestic.dpl.core`: The structure of the API for the developer. It should be as universal as possible
+- `com.github.majestic.dpl.grammars`: The conversion code to translate the Pipeline Tree to SQL
+- `com.github.majestic.dpl.runtime`: Run enable to execute the pipeline and show the results
+- Tests contain just the basics to check the structure is consistent and runnable. They are ran against an In-memory DuckDB instance.
 
