@@ -1,8 +1,8 @@
 # WareFlow
 
-## A Scala DSL to write data flows for Data Warehouses
+## A DSL to write data flows for Data Warehouses
 
-The main idea is to write typical Apache Spark or Flink-like pipelines, compile them to SQL queries and run them on systems that only have SQL endpoints.
+The main idea is to write typical DataFrame-style pipelines, compile them to SQL queries and run them on systems that only have SQL endpoints.
 
 ## Example:
 
@@ -35,7 +35,7 @@ left join prices on sales.id == prices.id
 GROUP BY id
 ```
 
-with DPL we would write:
+with Wareflow we would write:
 
 ```scala
     t"sales"
@@ -46,7 +46,7 @@ with DPL we would write:
       .show
 ```
 
-
+For a complete guide on syntax: [Wareflow Cheat Sheet](cheatsheet.md)
 
 ## Quick Start
 
@@ -55,22 +55,28 @@ with DPL we would write:
 - SBT
 
 ### Installation
+The project is not published on any repository yet. Therefore it requires local installation:
+
 - Clone the repository
 - Run `sbt publish-local`
 - Import in your project with: `libraryDependencies += com.github.majestic" %% "dpl" % "0.1.0-SNAPSHOT"`
 
-### Write a pipeline
+### Syntax
 
-- Source tables can be declared with:
-  - `t"my_source_table"`
-  - or `Source("my_source_table")`
-  Then transformations on a table can be written with `withColumn()`, `filter()`, `groupBy()`, `join()` etc...
-- Existing fields can be referenced with:
-  - `c"my_field"`
-  - or `col("my_field")`
-  Then common operations can be applied on this field with: `==`, `*`, `+`, `-` etc...
-- Write a literal (constant value): `lit("constantValue")`
-- Define an alias for a calculated column: `myColumn.as("name_of_my_column")`
+Complete syntax can be found in: [Wareflow Cheat Sheet](cheatsheet.md)
+
+### Executing your pipeline
+
+- Import a grammar matching your system: `import com.github.majyphi.wareflow.grammars.CommonSQLGrammar._`
+- Create a connection to your DataWarehouse : `implicit val connection: Connection = DriverManager.getConnection(...)`
+
+Now pipelines can be executed by calling `.run`, `.show`
+
+### Extending the framework by providing your own grammar
+
+- You can create your own grammar by extending the trait `Grammar`, and overriding the method `treeToSQL`
+  For simplicity, you can extend `CommonSQLGrammar` and override what is needed
+- You can create custom SQL expressions by extending `Expression` and add entries in your implementation of `evalExpression` in your grammar. 
 
 
 ## Structure of the repo
