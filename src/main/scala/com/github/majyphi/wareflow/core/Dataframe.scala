@@ -8,66 +8,57 @@ import scala.util.Try
 
 trait Dataframe {
 
-  def withColumn(column: Column) = Projection(Seq(column), Seq(), this)
+  def withColumn(column: Expression) : Projection = Projection(source = this).withColumn(column)
 
-  def select(columns: Column*) = Projection(columns, Seq(), this)
+  def select(columns: Expression*) = Projection(columns, Seq(), this)
 
-  def filter(filter: Column): Projection = Projection(filters  = Seq(filter), source =  this)
+  def filter(filter: Expression): Projection = Projection(filters  = Seq(filter), source =  this)
 
-  def groupBy(keyColumns: Column*) = GroupedDataframe(keyColumns, source = this)
+  def groupBy(keyColumns: Expression*) = GroupedDataframe(keyColumns, source = this)
 
-  def leftJoin(dataframe: Dataframe, joinType: JoinType = JoinType.LeftJoin) = PreJoin(this, dataframe, joinType)
-  def rightJoin(dataframe: Dataframe, joinType: JoinType = JoinType.RightJoin) = PreJoin(this, dataframe, joinType)
-  def innerJoin(dataframe: Dataframe, joinType: JoinType = JoinType.InnerJoin) = PreJoin(this, dataframe, joinType)
-  def fullJoin(dataframe: Dataframe, joinType: JoinType = JoinType.FullJoin) = PreJoin(this, dataframe, joinType)
-  def crossJoin(dataframe: Dataframe, joinType: JoinType = JoinType.CrossJoin) = PreJoin(this, dataframe, joinType)
+  def leftJoin(dataframe: Dataframe) = PreJoin(this, dataframe, JoinType.LeftJoin)
+  def rightJoin(dataframe: Dataframe) = PreJoin(this, dataframe, JoinType.RightJoin)
+  def innerJoin(dataframe: Dataframe) = PreJoin(this, dataframe, JoinType.InnerJoin)
+  def fullJoin(dataframe: Dataframe) = PreJoin(this, dataframe, JoinType.FullJoin)
+  def crossJoin(dataframe: Dataframe) = PreJoin(this, dataframe, JoinType.CrossJoin)
+
+  def printQuery(implicit grammar: Grammar): Unit = {
+    println(grammar.treeToSQL(this))
+  }
 
   def show(implicit grammar : Grammar, connection : Connection) : Unit = {
     val sqlQuery = grammar.treeToSQL(this)
     QueryExecution.show(sqlQuery)
   }
+
   def run(implicit grammar : Grammar, connection : Connection) : Try[Seq[Seq[String]]] = {
     val sqlQuery = grammar.treeToSQL(this)
     QueryExecution.run(sqlQuery)
   }
-}
 
-object Dataframe {
-  implicit class StringToTableHelper(val sc: StringContext) {
-    def t(args: Any*): Table = {
-      Table(sc.s(args: _*))
-    }
-  }
 }
 
 case class Table(name: String) extends Dataframe
 
-case class Projection(columns: Seq[Column] = Seq(col("*")), filters: Seq[Column] = Seq(), source: Dataframe) extends Dataframe {
-
-  override def withColumn(column: Column): Projection = this.copy(columns = columns ++ Seq(column))
-
-  override def filter(filter: Column): Projection = this.copy(filters = filters ++ Seq(filter))
-
+case class Projection(columns: Seq[Expression] = Seq(*()), filters: Seq[Expression] = Seq(), source: Dataframe) extends Dataframe {
+  override def withColumn(column: Expression): Projection = this.copy(columns = columns ++ Seq(column))
+  override def filter(filter: Expression): Projection = this.copy(filters = filters ++ Seq(filter))
 }
 
-case class GroupedDataframe(keyColumns: Seq[Column], aggColumns: Seq[Column] = Seq(), source: Dataframe) {
-  def agg(column: Column) = Aggregation(keyColumns, Seq(column), source)
+case class GroupedDataframe(keyColumns: Seq[Expression], aggColumns: Seq[Expression] = Seq(), source: Dataframe) {
+  def agg(column: Expression) = Aggregation(keyColumns, Seq(column), source)
 }
 
-case class Aggregation(keyColumns: Seq[Column], aggColumns: Seq[Column] = Seq(), source: Dataframe) extends Dataframe {
-
-  def agg(column: Column) = this.copy(aggColumns = aggColumns ++ Seq(column))
-
+case class Aggregation(keyColumns: Seq[Expression], aggColumns: Seq[Expression] = Seq(), source: Dataframe) extends Dataframe {
+  def agg(column: Expression) = this.copy(aggColumns = aggColumns ++ Seq(column))
 }
 
 case class PreJoin(sourceLeft: Dataframe, sourceRight: Dataframe, joinType: JoinType) {
-  def on(joinCondition: Column) = Join(sourceLeft,sourceRight, joinType, Seq(joinCondition))
+  def on(joinCondition: Expression) = Join(sourceLeft,sourceRight, joinType, Seq(joinCondition))
 }
 
-case class Join(sourceLeft: Dataframe, sourceRight: Dataframe, joinType: JoinType, joinConditions: Seq[Column] = Seq()) extends Dataframe {
-
-  def on(joinCondition: Column) = Join(sourceLeft,sourceRight, joinType, joinConditions ++ Seq(joinCondition))
-
+case class Join(sourceLeft: Dataframe, sourceRight: Dataframe, joinType: JoinType, joinConditions: Seq[Expression] = Seq()) extends Dataframe {
+  def on(joinCondition: Expression) = Join(sourceLeft,sourceRight, joinType, joinConditions ++ Seq(joinCondition))
 }
 
 abstract class JoinType(value: String) {
