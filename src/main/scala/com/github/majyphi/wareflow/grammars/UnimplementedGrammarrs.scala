@@ -1,6 +1,6 @@
 package com.github.majyphi.wareflow.grammars
 
-object DuckDBGrammar extends CommonSQLGrammar
+
 
 object RedshiftGrammar extends CommonSQLGrammar
 

@@ -23,16 +23,16 @@ trait Dataframe {
   def crossJoin(dataframe: Dataframe) = PreJoin(this, dataframe, JoinType.CrossJoin)
 
   def printQuery(implicit grammar: Grammar): Unit = {
-    println(grammar.treeToSQL(this))
+    println(grammar.evalTree(this))
   }
 
   def show(implicit grammar : Grammar, connection : Connection) : Unit = {
-    val sqlQuery = grammar.treeToSQL(this)
+    val sqlQuery = grammar.evalTree(this)
     QueryExecution.show(sqlQuery)
   }
 
   def run(implicit grammar : Grammar, connection : Connection) : Try[Seq[Seq[String]]] = {
-    val sqlQuery = grammar.treeToSQL(this)
+    val sqlQuery = grammar.evalTree(this)
     QueryExecution.run(sqlQuery)
   }
 

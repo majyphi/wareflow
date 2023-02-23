@@ -6,7 +6,9 @@ trait Grammar {
 
   implicit val instance : Grammar = this //For implicit import
 
-  def treeToSQL(tree : Dataframe) : String
+  def evalTree(tree : Dataframe) : String
+
+  def evalExpression[T <: Expression](c : T) : String
 
 }
 
@@ -15,8 +17,8 @@ trait CommonSQLGrammar extends Grammar {
   private val cteLeftName = "cte_left"
   private val cteRightName = "cte_right"
 
-  def evalExpresion(c: Expression): String = c match {
-    case alias(e,_)                             => evalExpresion(e)
+  override def evalExpression[E <: Expression](e: E): String = e match {
+    case alias(e,_)                             => evalExpression(e)
     case *()                                    => "*"
     case col(name)                              => s"\"$name\""
     case lit(value)                             => evalLiteralValue(value)
@@ -27,8 +29,8 @@ trait CommonSQLGrammar extends Grammar {
     case maximum(e)                             => s"max(${evalName(e)})"
     case minimum(e)                             => s"min(${evalName(e)})"
     case rank()                                 => s"rank()"
-    case windowAggregation(e, window)           => s"${evalExpresion(e)} over (${evalWindow(window)})"
-    case _                                      => throw GrammarException("Unimplemented Column Expression: " + c.getClass.toString)
+    case windowAggregation(e, window)           => s"${evalExpression(e)} over (${evalWindow(window)})"
+    case _                                      => throw GrammarException("Unimplemented Column Expression: " + e.getClass.toString)
   }
 
   def evalLiteralValue(value : Any) : String = value match {
@@ -38,53 +40,53 @@ trait CommonSQLGrammar extends Grammar {
     case _ => throw GrammarException("Unimplemented type for literal: " + value.getClass.toString)
   }
 
-  def evalSelectExpression(c: Expression): String = c match {
-    case alias(col,name)              => s"${evalExpresion(col)} as $name"
-    case c : Expression               => evalExpresion(c)
+  def evalSelectExpression[E <: Expression](e: E): String = e match {
+    case alias(col,name)              => s"${evalExpression(col)} as $name"
+    case c : Expression               => evalExpression(c)
   }
 
-  def evalName(e: Expression): String = e match {
+  def evalName[E <: Expression](e: E): String = e match {
     case alias(_,name)                => name
     case left(col)                    => s"$cteLeftName.${evalName(col)}"
     case right(col)                   => s"$cteRightName.${evalName(col)}"
-    case c : Expression               => evalExpresion(c)
+    case c : Expression               => evalExpression(c)
   }
 
-  def evalWindow(w: Window): String =
+  def evalWindow[W <: Window](w: W): String =
     s"""
        |${if (w.partitions.nonEmpty) "PARTITION BY" else ""} ${w.partitions.map(evalName).mkString(", ")}
        |${if (w.orderBy.nonEmpty) "ORDER BY" else ""} ${w.orderBy.map(evalOrder).mkString(", ")}
        |""".stripMargin
 
-  def evalOrder(o: Order): String = evalName(o.column) + " " + o.direction.toString
+  def evalOrder[O <: Order](o: O): String = evalName(o.column) + " " + o.direction.toString
 
-  override def treeToSQL(tree: Dataframe): String =
+  override def evalTree(tree: Dataframe): String =
     tree match {
-      case df: Aggregation            => aggregation(df)
-      case df: Join                   => join(df)
-      case df: Projection             => projection(df)
-      case df: Table                  => source(df)
+      case df: Aggregation            => evalAggregation(df)
+      case df: Join                   => evalJoin(df)
+      case df: Projection             => evalProjection(df)
+      case df: Table                  => evalSource(df)
       case df                         => throw GrammarException("Unimplemented Processing Stage type: " + df.getClass.toString)
     }
 
-  def source(df: Table): String = s"SELECT * FROM ${df.name}"
+  def evalSource(df: Table): String = s"SELECT * FROM ${df.name}"
 
-  def projection(df: Projection): String = {
+  def evalProjection(df: Projection): String = {
     s"""with cte_select as (
        |    with cte as (
-       |       ${treeToSQL(df.source)}
+       |       ${evalTree(df.source)}
        |    )
        |  SELECT ${df.columns.map(evalSelectExpression).mkString(",\n")}
        |  FROM cte
        |)
        |SELECT * FROM cte_select
-       |${if (df.filters.nonEmpty) "WHERE" else ""} ${df.filters.map(evalExpresion).mkString("\nAND")}
+       |${if (df.filters.nonEmpty) "WHERE" else ""} ${df.filters.map(evalExpression).mkString("\nAND")}
        |""".stripMargin
   }
 
-  def aggregation(df: Aggregation): String = {
+  def evalAggregation(df: Aggregation): String = {
     s"""with cte as (
-       |  ${treeToSQL(df.source)}
+       |  ${evalTree(df.source)}
        |)
        |SELECT
        |${(df.keyColumns ++ df.aggColumns).map(evalSelectExpression).mkString(",\n")}
@@ -94,16 +96,16 @@ trait CommonSQLGrammar extends Grammar {
   }
 
 
-  def join(df: Join): String = {
+  def evalJoin(df: Join): String = {
 
     s"""with cte_left as (
-       |  ${treeToSQL(df.sourceLeft)}
+       |  ${evalTree(df.sourceLeft)}
        |),
        |cte_right as (
-       |  ${treeToSQL(df.sourceRight)}
+       |  ${evalTree(df.sourceRight)}
        |)
        |SELECT * FROM cte_left ${df.joinType} cte_right
-       |ON (${df.joinConditions.map(evalExpresion).mkString("\nAND")})
+       |ON (${df.joinConditions.map(evalExpression).mkString("\nAND")})
        |""".stripMargin
   }
 

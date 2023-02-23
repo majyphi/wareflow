@@ -2,7 +2,7 @@ package com.github.majyphi.wareflow
 
 import com.github.majyphi.wareflow.core.Helpers._
 import com.github.majyphi.wareflow.core._
-import com.github.majyphi.wareflow.grammars.DuckDBGrammar._
+import com.github.majyphi.wareflow.grammars.duckdb.DuckDBGrammar._
 import com.github.majyphi.wareflow.runtime.QueryExecution
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
@@ -71,6 +71,12 @@ class ProcessingTreeTest extends AnyFlatSpec with BeforeAndAfterAll with Matcher
 
     result shouldBe a(Symbol("Success"))
     result.get should contain theSameElementsAs Seq(Seq("product1", "2", "1"), Seq("product2", "4", "1"))
+  }
+
+  "SQL query building on a DuckDB specific function" should "return a runnable window query" in {
+    val result = t"prices"
+      .withColumn(array_extract(lit("DuckDB"),lit(2)))
+      .show
   }
 
 }
